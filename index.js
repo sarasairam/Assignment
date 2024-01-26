@@ -37,8 +37,7 @@ class Library {
     }
     addBook(book) {
         // Add book to library
-        this.books.push({...book})
-        
+        this.books.push(book)
     }
     displayBooks() {
         // Display all books in library
@@ -47,15 +46,11 @@ class Library {
     }
     searchByTitle(title) {
         // Search books by title
-        const list = this.books
-        let data = "No such book is present in library";
-        for (let i of list){
-        if(i.title ===title){
-            data = `${title} book is present in library`
-            break;
+        const matchingBooks = this.books.filter(book=>book.title === title);
+        if(matchingBooks.length===0){
+            return 'Book is not listed in the library'
         }
-    }
-    return data // returns statement informining presence or absence of book by searching using title of book
+        return matchingBooks.map(book=>book.displayInfo()) // returns statement informining presence or absence of book by searching using title of book or display of book 
     }
     deleteBook(title){
         //Delete book by title
@@ -99,8 +94,8 @@ class LibraryList{
     }
 }
 
-const hyderabadlibrary = new Library()      // library instance is created 
 const libraries = new LibraryList()         // libraries list is created 
+const hyderabadlibrary = new Library()      // library instance is created 
 libraries.addLibrary("hyderabadlibrary")    // library is added to libraries list
 const book1 = new Book("harry potter","J.K.Rowling",255)    //following are the instances of Books 
 const book2 = new Book("Huckleberry","Mark Twain",258)
@@ -115,21 +110,22 @@ hyderabadlibrary.addBook(book3)
 hyderabadlibrary.addBook(ebook1)
 hyderabadlibrary.addBook(ebook2)
 hyderabadlibrary.addBook(ebook3)
-const list_of_books = hyderabadlibrary.displayBooks()
-console.log(list_of_books)      //displaying books in console
 
-/* [
-  { title: 'harry potter', author: 'J.K.Rowling', ISBN: 255 },
-  { title: 'Huckleberry', author: 'Mark Twain', ISBN: 258 },
-  { title: 'Treasure Island', author: 'Robert Louis', ISBN: 272 },
-  { title: 'Darkness to light', author: 'A.Helwa', ISBN: 124, fileFormat: 'PDF'},
-  { title: 'The Alchemist', author: 'Paulo Coelho', ISBN: 128, fileFormat: 'PDF'},
-  { title: 'The little prince', author: 'Richard Howard', ISBN: 135, fileFormat: 'EPUB'}
+console.log(hyderabadlibrary.displayBooks())      //displaying books in console
+
+/* [Book { title: 'harry potter', author: 'J.K.Rowling', ISBN: 255 },
+    Book { title: 'Huckleberry', author: 'Mark Twain', ISBN: 258 },
+    Book { title: 'Treasure Island', author: 'Robert Louis', ISBN: 272 },
+    EBook { title: 'Darkness to light', author: 'A.Helwa', ISBN: 124, fileFormat: 'PDF'},
+    EBook { title: 'The Alchemist', author: 'Paulo Coelho', ISBN: 128, fileFormat: 'PDF'},
+    EBook { title: 'The little prince', author: 'Richard Howard', ISBN: 135, fileFormat: 'EPUB'}
     ]*/
 
 console.log(hyderabadlibrary.searchByTitle("Treasure Island"))  //test case for checking searchByTitle 
 
-/*Treasure Island book is present in library*/
+/*[
+  'Title of the book is Treasure Island, Author is Robert Louis and ISBN is 272'
+]*/
 
 console.log(libraries.displayLibraries())       // displaying all libraries in console
 
@@ -140,10 +136,15 @@ console.log(libraries.displayLibraries())       // displaying all libraries in c
 app.post('/addBook', (req, res) => {
     // Logic to add a book
     const {title,author,ISBN} = req.body        // book details are sent through https body
-    const data = new Book(title,author,ISBN)
-    hyderabadlibrary.addBook(data)
-    res.send(hyderabadlibrary.displayBooks()) //onresolving sending all books as response after adding a new book
-});
+    try{
+        const data = new Book(title,author,ISBN)
+        hyderabadlibrary.addBook(data)
+        res.send("Book added to Database Succesfully!") //onresolving message as response after adding a new book
+    }
+    catch(error){
+        res.status(500).json({error:error.message})
+    }
+    });
 
 app.get('/listBooks', (req, res) => {
     // Logic to list books
@@ -153,8 +154,12 @@ app.get('/listBooks', (req, res) => {
 app.delete('/deleteBook', (req, res) => {
     // Logic to delete a book
     const { bookname } = req.body;      // book details are sent through https body
-    hyderabadlibrary.deleteBook(bookname)
-    res.send(hyderabadlibrary.displayBooks())   //onresolving sending all books as response after deleting a book
+    try{
+        hyderabadlibrary.deleteBook(bookname)
+    res.send("Book deleted from Database Succesfully!")   //onresolving sending message as response after deleting a book
+    }catch(error){
+        res.status(500).json({error:error.message})
+    }
 });
 
 
@@ -166,15 +171,28 @@ app.get('/listLibrary', (req, res) => {
 
 app.post('/addLibrary', (req, res) => {
     // Logic to add a library
-    let {libraryname} = req.body        // library name is sent through https body
-    libraries.addLibrary(libraryname)
-    res.send(libraries.displayLibraries())      // on resolving sending all library names as response after adding a new library
+    const {libraryname} = req.body   // library name is sent through https body
+    try{
+        libraries.addLibrary(libraryname)
+    res.send("Library is added succesfully")      // on resolving message as response after adding a new library
+
+    }
+    catch(error){
+        res.status(500).json({error:error.message})
+    }
+    
 });
 app.delete('/deleteLibrary', (req, res) => {
     // Logic to delete a library
     const { libraryname } = req.body;       // library name is sent through https body
-    libraries.deleteLibrary(libraryname)
-    res.send(libraries.displayLibraries())   // on resolving sending all library names as response after deleting a library
+    
+    try{
+        libraries.deleteLibrary(libraryname)
+    res.send("Requested library is deleted succesfully ")   // on resolving sending message as response after deleting a library
+    }
+    catch(error){
+        res.status(500).json({error:error.message})
+    }
 });
 
 // Start server
